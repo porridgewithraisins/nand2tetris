@@ -1,0 +1,65 @@
+class Memory{
+	static int HEAP;
+	static int storesBlockSize;
+	static int storesNextBlock;
+	static int RESERVED;
+	static int freeBlocksHead;
+
+	function void init(){
+		let HEAP = 2048;
+		let storesBlockSize = 0;
+		let storesNextBlock = 1;
+		let RESERVED = 2;
+		let freeBlocksHead = HEAP;
+
+		let HEAP[storesBlockSize] = (16384 + 1) - 2048 - RESERVED;
+		let HEAP[storesNextBlock] = null;
+
+		return;
+	}
+
+
+	function int peek(int address){
+		return address[0];
+	}
+	
+	function void poke(int address, int value){
+		let address[0] = value;
+		return;
+	}
+	
+	function int alloc(int size){
+		var int prev, curr, next;
+
+		let curr = freeBlocksHead;
+
+		while (curr[storesBlockSize] < size) {
+			let prev = curr;
+			let curr = curr[storesNextBlock];
+			if (curr = null){
+				return -1;
+			}
+		}
+
+		let next = curr + size + RESERVED;
+		let next[storesBlockSize] = curr[storesBlockSize] - size - RESERVED;
+		let next[storesNextBlock] = curr[storesNextBlock];
+		let curr[storesBlockSize] = size;
+		let curr[storesNextBlock] = null;
+
+		if (prev){
+			let prev[storesNextBlock] = next;
+		} else {
+			let freeBlocksHead = next;
+		}
+
+		return curr + RESERVED;
+	}
+
+	function void deAlloc(int block){
+		let block = block - RESERVED;
+		let block[storesNextBlock] = freeBlocksHead;
+		let freeBlocksHead = block;
+		return;
+	}
+}

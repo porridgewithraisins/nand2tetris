@@ -1,0 +1,60 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/Memory.hdl
+
+/**
+ * The complete address space of the Hack computer's memory,
+ * including RAM and memory-mapped I/O. 
+ * The chip facilitates read and write operations, as follows:
+ *     Read:  out(t) = Memory[address(t)](t)
+ *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
+ * In words: the chip always outputs the value stored at the memory 
+ * location specified by address. If load==1, the in value is loaded 
+ * into the memory location specified by address. This value becomes 
+ * available through the out output from the next time step onward.
+ * Address space rules:
+ * Only the upper 16K+8K+1 words of the Memory chip are used. 
+ * Access to address>0x6000 is invalid. Access to any address in 
+ * the range 0x4000-0x5FFF results in accessing the screen memory 
+ * map. Access to address 0x6000 results in accessing the keyboard 
+ * memory map. The behavior in these addresses is described in the 
+ * Screen and Keyboard chip specifications given in the book.
+ */
+
+CHIP Memory {
+    IN in[16], load, address[15];
+    OUT out[16];
+
+    PARTS:
+    
+    // configure the devices
+    
+    RAM16K(in=in, load=writeRam, address=address[0..13], out=out);
+    // from 0000 0000 0000 0000 to 0011 1111 1111 1111 => 14 things change
+    Screen(in=in, load=writeScreen, address=address[0..12])
+    // from 0100 0000 0000 0000 to 0101 1111 1111 1111 => 13 things change
+    Keyboard(out=whatever);
+
+    // now have to pin up writeRam and writeScreen
+
+    Copy(in=address[14], out=screen);
+    Not(in=screen, out=notScreen);
+    And(a=address[14], b=address[13], out=keyboard);
+    Not(in=keyboard, out=notKeyboard);
+    // according to a-instruction format
+    
+    // choose output device
+    Copy(in=notScreen, out=ramChosen);
+    And(a=screen, b=notKeyboard, out=screenChosen);
+
+    // if load is high, actually output to the chosen device
+    And(a=ramChosen, b=load, out=writeRAM);
+    And(a=screenChosen, b=load, out=writeScreen);
+
+    /* ranges
+    RAM: 0x0000 -> 0x3FFF
+    Screen: 0x4000 -> 0x5FFF
+    Keyboard: 0x6000 -> 0x7FFF
+    */
+}

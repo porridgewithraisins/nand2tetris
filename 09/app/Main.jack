@@ -1,0 +1,234 @@
+class Main {
+    static Array grid;
+    static int size;
+    static int sqrt;
+    static int fontBitmapHeight;
+    static int baseAsciiValue;
+    static int spaceAsciiValue;
+
+    function void main(){
+
+        var int lineWidth;
+
+        let fontBitmapHeight = 11;
+        let baseAsciiValue = 48;
+        let spaceAsciiValue = 32;
+        let lineWidth = 200;
+
+        do Output.printString("Sudoku solver");
+        do Output.println();
+        do Screen.drawLine(0, fontBitmapHeight + 2, lineWidth, fontBitmapHeight + 2);
+        do Output.println();
+        do Output.printString("Enter the number of rows in your puzzle grid (default 9): ");
+        let size = Keyboard.readChar() - baseAsciiValue;
+        if (size < 1){
+            let size = 9;
+        }
+        let sqrt = Math.sqrt(size);
+        do Main.initGrid();
+
+        do Output.println();
+        do Output.printString("Enter the grid, use anything other than 1-9 for empty cells");
+        do Output.println();
+
+
+        do Main.run();
+        do Main.dispose();
+        return;
+    }
+
+    function void initGrid(){
+        var int i;
+        let grid = Array.new(size);
+        let i = 0;
+        while (i < size){
+            let grid[i] = Array.new(size);
+            let i = i + 1;
+        }
+
+        return;
+    }
+
+    function void run(){
+        var int num;
+        var int row, column;
+        
+        while (row < size){
+            let column = 0;
+            while (column < size){
+                let num = Keyboard.readChar() - baseAsciiValue;
+                if ((num < 1) | (num > size)){
+                    let num = 0;
+                }
+                do Main.setValueAt(row, column, num);
+                let column = column + 1;
+                do Output.printChar(spaceAsciiValue);
+            }
+            do Output.println();
+            let row = row + 1;
+        }
+
+
+        do Output.println();
+        do Output.println();
+
+        if (Main.solve()){
+            do Output.printString("Solved! Here is the solved board:");
+        } else {
+            do Output.printString("No solution. Please check your puzzle again.");
+        }
+
+        do Output.println();
+        do Main.printGrid();
+        return;
+    }
+
+
+    function boolean solve() {
+        var int emptyCell;
+        var int row, col, num;
+        let emptyCell = Main.findEmptyCell();
+
+        if (emptyCell = -1){
+            return true;
+        }
+
+        let row = emptyCell / size;
+        let col = Main.mod(emptyCell, size);
+
+        let num = 1;
+
+        while (num < (size + 1)){
+            if (Main.isValidPlacement(row, col, num)){
+                do Main.setValueAt(row, col, num);
+                if (Main.solve()){
+                    return true;
+                }
+                do Main.setValueAt(row, col, 0);
+            }
+            let num = num + 1;
+        }
+
+        return false;
+    }
+
+    function boolean isValidPlacement(int row, int col, int value){
+        var int i, j;
+        var int boxRowStart, boxRowEnd;
+        var int boxColStart, boxColEnd;
+
+        // row
+        let j = 0;
+        while (j < size){
+            if (Main.getValueAt(row, j) = value){
+                return false;
+            }
+            let j = j + 1;
+        }
+
+        // column
+        let i = 0;
+        while (i < size){
+            if (Main.getValueAt(i, col) = value){
+                return false;
+            }
+            let i = i + 1;
+        }
+
+        // box
+
+        let boxRowStart = row - Main.mod(row, sqrt);
+        let boxRowEnd = boxRowStart + sqrt;
+        let boxColStart = col - Main.mod(col, sqrt);
+        let boxColEnd = boxColStart + sqrt;
+
+        let i = boxRowStart;
+        while (i < boxRowEnd){
+            let j = boxColStart;
+            while (j < boxColEnd){
+                if (Main.getValueAt(i, j) = value){
+                    return false;
+                }
+                let j = j + 1;
+            }
+            let i = i + 1;
+        }
+
+        return true;
+    }
+
+
+    function void printGrid(){
+        var int i, j;
+        var int row, column;
+
+        let row = 0;
+        while (row < size){
+            let column = 0;
+            while (column < size){
+                do Output.printChar(Main.getValueAt(row, column) + 48);
+                let column = column + 1;
+                do Output.printChar(32); // space
+            }
+            do Output.println();
+            let row = row + 1;
+        }
+
+        return;
+    }
+
+    function int findEmptyCell(){
+        var int i, j;
+        let i = 0;
+        while (i < size){
+            let j = 0;
+            while (j < size){
+                if (Main.getValueAt(i, j) = 0){
+                    return (i * size) + j;
+                }
+                let j = j + 1;
+            }
+            let i = i + 1;
+        }
+        return -1;
+    }
+
+    function int getValueAt(int x, int y){
+        var Array row;
+
+        let row = grid[x];
+
+        return row[y];
+    }
+
+    function int mod(int x, int m){
+        while (~(m > x)){
+            let x = x - m;
+        }
+        return x;
+    }
+
+    function void setValueAt(int x, int y, int val){
+        var Array row;
+
+        let row = grid[x];
+        let row[y] = val;
+        
+        return;
+    }
+
+    function void dispose(){
+        var int i;
+        var Array row;
+
+        let i = 0;
+        while (i < size){
+            let row = grid[i];
+            do row.dispose();
+            let i = i + 1;
+        }
+        do grid.dispose();
+        return;
+    }
+
+}
